@@ -1,4 +1,7 @@
 import numpy as n
+import logging
+
+lib_logger = logging.getLogger("SEBI-CF.lib")
 
 def Bw(hr,L,z0h,z0m):
     alphah=0.12
@@ -33,6 +36,8 @@ def cleanup(x,label):
         x[search] = abs(x[search])
         search = n.where(x>1.)
         x[search] = n.nan
+        search = n.where(x==0.)
+        x[search] = 0.001
         
     elif label == "albedo":
         search = n.where(x<0.)
@@ -74,9 +79,9 @@ def cleanup(x,label):
         pass
 
     try:
-        log = "\n" + str(len(x)) + " pixels cleaned up for " + label 
+        log = str(len(x)) + " pixels cleaned up for " + label
     except:
-        log = "\nunknown cleanup criteria for " + label
+        log = "unknown cleanup criteria for " + label
 
     return x,log
 
@@ -144,13 +149,14 @@ def G0(fc,Rn):
 #    p.savefig(label+'-preview.png')
 
 def getStats(x,label):
+    lib_stats_logger = logging.getLogger("SEBI-CF.lib.stats")
     i = nancount(x)
     #return label + ' : min=' + str(n.nanmin(x)) + ' max=' + str(n.nanmax(x)
     #                            ) + ' avg=' + str(n.nansum(x)/x.size) + ' NanCount=' + str(i)
     try:
-        return 'Mean ' + label + ' = ' + str("%10.4f" % (n.nansum(x)/(x.size-i))) + ' (NaN count is ' + str(i) +')'
+        lib_stats_logger.info('Mean ' + label + ' = ' + str("%10.4f" % (n.nansum(x)/(x.size-i))) + ' (NaN count is ' + str(i) +')')
     except ZeroDivisionError:
-        return 'error on ' + label + ' (type is ' + str(x.dtype) + '): contains ' + str(n.nansum(x)) + ' Nan for a total of ' + str(x.size) + ' pixels'
+        lib_stats_logger.info('error on ' + label + ' (type is ' + str(x.dtype) + '): contains ' + str(n.nansum(x)) + ' Nan for a total of ' + str(x.size) + ' pixels')
 
 
 def H(cp,delta_a,k,ra,rho,ustar):
@@ -163,6 +169,8 @@ def hv2z0m(hv):
     return z0m
 
 def kB(cd,ct,fc,k,hg,hr,hs,hv,lai,ndvi,p0,pr,tr,ur,z0m):
+    lib_kb_logger = logging.getLogger("SEBI-CF.lib.kb")
+
     '''Massman kB-1 model'''
     
     fc = setMask(fc,0.,0.,1.)
@@ -185,11 +193,25 @@ def kB(cd,ct,fc,k,hg,hr,hs,hv,lai,ndvi,p0,pr,tr,ur,z0m):
     Prdt = 0.71 # Prandtl number
     #pr = p0*((1-((0.0065*(hg+hr))/288.15))**5.256) INPUT!!
     t = tr*((pr/p0)**.286)
-    nu = (1.327*(p0/pr)*(t/273.16)**1.81)*1.E-5
+
+    # Some code added to avoid divide by zero
+    nu = pr - pr # just to get an array of the same dimension
+    search = n.nonzero(nu) # identify numerical
+    nu[search] = (1.327*(p0/pr[search])*(t[search]/273.16)**1.81)*1.E-5
     z0m = ndvi2z0m(ndvi)
     hv = z0m_h / z0m
     d0 = z0m2d0(z0m)
     ustar = u2ustar(d0,hr,k,ur,z0m)
+
+    # wind speed at canopy height
+    uh = z0m - z0m # just to get an array of the same dimension
+
+    # The following is done only to present calculation of log(0)
+    #hflow = hv-d0
+    #search = n.where(hflow=0.)
+    #loghflow =
+
+
     uh = ur*((n.log(hv-d0)-n.log(z0m))/(n.log(hr-d0)-n.log(z0m)))
     #Restar = U*uh*hv/nu
     Restar = hs*ustar/nu
@@ -208,22 +230,21 @@ def kB(cd,ct,fc,k,hg,hr,hs,hv,lai,ndvi,p0,pr,tr,ur,z0m):
     ref = n.where(fc<=0.1)
     kb_1[ref] = kbs_1[ref]
     
-    logs = 'kB model:'
-    logs += '\n' + getStats(U,'U')
-    logs += '\n' + getStats(N,'N')
-    logs += '\n' + getStats(d_h,'d_h')
-    logs += '\n' + getStats(z0m_h,'z0m_h')
-    logs += '\n' + getStats(pr,'pr')
-    logs += '\n' + getStats(t,'t')
-    logs += '\n' + getStats(nu,'nu')
-    logs += '\n' + getStats(d0,'d0')
-    logs += '\n' + getStats(ustar,'ustar')
-    logs += '\n' + getStats(uh,'uh')
-    logs += '\n' + getStats(Restar,'Restar')
-    logs += '\n' + getStats(Ctstar,'Ctstar')
-    logs += '\n' + getStats(kb_dec_a,'kb_dec_a')
-    logs += '\n' + getStats(kb_dec_b,'kb_dec_b')
-    logs += '\n' + getStats(kbs_1,'kbs_1')
+    getStats(U,'U')
+    getStats(N,'N')
+    getStats(d_h,'d_h')
+    getStats(z0m_h,'z0m_h')
+    getStats(pr,'pr')
+    getStats(t,'t')
+    getStats(nu,'nu')
+    getStats(d0,'d0')
+    getStats(ustar,'ustar')
+    getStats(uh,'uh')
+    getStats(Restar,'Restar')
+    getStats(Ctstar,'Ctstar')
+    getStats(kb_dec_a,'kb_dec_a')
+    getStats(kb_dec_b,'kb_dec_b')
+    getStats(kbs_1,'kbs_1')
     
     # !!!
     #kb_1 = kb_1-kb_1+4.0
@@ -231,7 +252,7 @@ def kB(cd,ct,fc,k,hg,hr,hs,hv,lai,ndvi,p0,pr,tr,ur,z0m):
     
     z0h = z0m / n.exp(kb_1)
     
-    return kb_1, z0h, logs
+    return kb_1, z0h
 
 def L(cp,delta_a,g,k,Le,rho,Rn,G0,ustar,state='none'):
     if state == 'dry':
@@ -349,7 +370,16 @@ def tpot(cp,p,p0,q,rd,t):
     return t*((p0/p)**kr)
     
 def u2ustar(d0,h,k,u,z0m):
-    return (u*k)/(n.log((h-d0)/z0m))
+    """
+    Calculate u* from the wind speed
+    """
+    #TODO: Unit testing for u2ustar
+
+    ustar = z0m - z0m # to get an empty array of proper dimension
+    ratio = (h-d0)/z0m
+    search = n.nonzero(ratio)
+    ustar[search] = (u[search]*k)/(n.log(ratio[search]))
+    return ustar
 
 def z0m2d0(z0m):
     return z0m*4.9

@@ -1,6 +1,11 @@
 import numpy as n
 import time
 import xml.dom.minidom
+import logging
+
+#create logger
+project_logger = logging.getLogger("SEBI-CF.Project")
+
 
 class project():
     
@@ -73,7 +78,7 @@ class project():
         self.pressureLevel = self.getNode(self.dom,'pressureLevel')
         
     def setGrids(self):
-        '''Calculate project scales'''
+        """""Calculate project scales"""""
         self.gridNb = [round(self.nrows * self.cellsize / self.avgALS), round(self.ncols * self.cellsize / self.avgALS)]
         self.pixPerGrid = int(min(self.nrows / self.gridNb[0],self.ncols / self.gridNb[1]))
         self.gridNb = [int(self.nrows / self.pixPerGrid),int(self.ncols / self.pixPerGrid)]
