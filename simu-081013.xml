@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--SEBI-CF Configuration File
+Complies with sebi-cf versions > 0.2.x. Read comments for information.
+-->
+
+<project name="AATSR-081013" author="J.Colin">
+
+    <!-- The project path must be a full path name, eg. /home/user/data/ -->
+    <path>/Users/jerome/Dropbox/code/python/sebi-cf/Simu_20081013/</path>
+    
+    <!-- IMAGES
+    The "images" container specifies input array dimensions, format, specifications
+    and variable file names. The "images" tag require attributes:
+        samples = number of cells of the array in column
+        lines = number of cells of the array in lines
+        pixel_size = the pixel size is expressed in meters
+        no_data = No data can either be a numeric or an NaN.
+        ftype = the input file format:
+            "npy" = numpy array file
+            "hdr" = raw binary float32, Envi style
+    -->    
+    <images samples="1042" lines="1922" pixel_size="1000." no_data="NaN" ftype="npy">
+        <!--
+        The following tags define variables file names, including file extensions.
+        Please note that the following are mandatory:
+            albedo = arrays of floating point values with 0. < albedo < 1.;
+            lst = arrays of floating point values in K;
+            ndvi = arrays of floating point values with 0. < ndvi < 1.;
+        -->
+        <albedo>albedo.npy</albedo>
+        <lst>lst.npy</lst>
+        <ndvi>ndvi.npy</ndvi>
+        <!--
+        Whenever available, please specify additional input files:
+            emissivity = land surface emissivity with 0. < emissivity < 1.;
+            fc = fractional vegetation cover with 0. < fc < 1.;
+            hv = vegetation height in meters;
+            lai = leaf area index;
+            RnDaily = daily mean net radiation, in W/m2;
+            mask = mask array for no data values;
+        -->
+    </images>
+    
+    <!-- ATMOSPHERE
+    The "atmosphere" container defines the atmospher specifications. It can either be of type "1D" or "2D":
+        "1D" = a single column of air. In this case, the variables tags are floating point values;
+        "2D" = arrays of variables, of the same dimension as the input images;
+    
+    The following variables must be specified:
+        hg = surface altitude in meters above mean sea level;
+        hr = height of the reference level in meters over ground;
+        lwdw = longwave downward radiation, in W/m2;
+        pg = air pressure at surface level, with units specified with tag "pressureUnit" (eg. "hpa"). The pressure
+            may be given at sea level, provided that the tag "pressureLevel" is set to "SL";
+        pr = air pressure at reference level, with units specified with tag "pressureUnit";
+        qg = specific humidity at ground level, in g/g;
+        qr = specific humidity at reference level, in g/g;
+        swdw = shortwave downward radiation, in W/m2;
+        tr = air temperature at reference level, in K;
+        ur = wind speed at reference level, in m/s;
+    -->
+    <atmosphere type="2D">
+        <hg>dem.npy</hg>
+        <hr>pblh.npy</hr>
+        <lwdw>glw.npy</lwdw>
+        <pg>psl.npy</pg>
+        <pr>p_pbl.npy</pr>
+        <qg>q2.npy</qg>
+        <qr>qpbl.npy</qr>
+        <swdw>gsw.npy</swdw>
+        <tr>tpbl.npy</tr>
+        <ur>upbl.npy</ur>
+        <pressureUnit>hPa</pressureUnit><!-- if your pressure data are in Pa, simply skip this-->
+        <pressureLevel>SL</pressureLevel><!-- if your pressure data are at ground level, simply skip this-->
+    </atmosphere>
+    
+    <!-- OPTIONS
+    The "options" container defines additional attribute for the run:
+        logs = set "True" or "False" if you wish to get detailed logs and statistics on your run;
+        preview = deprecated;
+        prefix = defines a prefix string to output file names, eg. if prefix is "myrun-" the latent heat output file
+            will be named "myrun-LE";
+        kbMode = if defined to "Massman" then Massman's model is applied, otherwise kB = 4.;
+        broyden = if "True" the broyden solver is used to compute stability parameters sequence (not recommended);
+        iterate = if "True" an iteration sequence is used to solve the stability parameters (recommended);
+    -->
+    <options>
+        <logs>True</logs>
+        <preview>True</preview>
+        <prefix>AATSR-081013-</prefix>
+        <kbMode>constant</kbMode>
+        <broyden>False</broyden>
+        <iterate>True</iterate>
+    </options>
+</project>

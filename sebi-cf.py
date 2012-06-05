@@ -813,7 +813,7 @@ def process(fproject):
         #process_logger.info("ERROR: process aborted")
         
     #finally:
-    print "Check sebi-cf.log for more information"
+    print "Check sebi-cf.log for more information."
 
         # Get time and save logs
 #    myproj.logs += '\n\nTotal processing time (s):' + str(time.time()-time0)
