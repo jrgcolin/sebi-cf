@@ -37,7 +37,8 @@ class project():
         self.cellsize = float(self.getAttribute(self.dom,'images','pixel_size'))
         # NoData policy: a nodata can either be a numeric or a non-numeric (NaN), both being converted to floating point
         self.NODATA_value = float(self.getAttribute(self.dom,'images','no_data'))
-        
+        self.ftype = self.getAttribute(self.dom,'images','ftype')
+
     # set atmospheric forcing mode
         self.atmmode = self.getAttribute(self.dom,'atmosphere','type')
         
@@ -109,10 +110,19 @@ class project():
     def read(self,fimage):
         """Return an array of an fimage file reference"""
         if fimage <> "undef":
-            img = n.fromfile(self.path+fimage,dtype=n.float32)
-            img = img.reshape([self.nrows,self.ncols])
+            try:
+                if self.ftype == "hdr":
+                    img = n.fromfile(self.path+fimage,dtype=n.float32)
+                    img = img.reshape([self.nrows,self.ncols])
+                    return img
+                elif self.ftype == "npy":
+                    img = n.load(self.path+fimage)
+                    return img
+            except IOError:
+                print "IOError: Please check filename for " + fimage + " in your configuration file..."
+                exit()
             #img = n.load(self.path+fimage)
-            return img
+
 
     def writeRaw(self,iContent,iName):
         #mybin=open(self.path+self.prefix+iName+'.bin','w')

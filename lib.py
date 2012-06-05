@@ -31,50 +31,53 @@ def Cw(hr,L,z0h,z0m):
     return res
 
 def cleanup(x,label):
-    if label == "ndvi":
-        search = n.where(x<0.)
-        x[search] = abs(x[search])
-        search = n.where(x>1.)
-        x[search] = n.nan
-        search = n.where(x==0.)
-        x[search] = 0.001
-        
-    elif label == "albedo":
-        search = n.where(x<0.)
-        x[search] = n.nan
-        search = n.where(x>1.)
-        x[search] = n.nan
+    try:
+        if label == "ndvi":
+            search = n.where(x<0.)
+            x[search] = abs(x[search])
+            search = n.where(x>1.)
+            x[search] = n.nan
+            search = n.where(x==0.)
+            x[search] = 0.001
 
-    elif label == "ts":
-        search = n.where(x<250.)
-        x[search] = n.nan
-        search = n.where(x>340.)
-        x[search] = n.nan
+        elif label == "albedo":
+            search = n.where(x<0.)
+            x[search] = n.nan
+            search = n.where(x>1.)
+            x[search] = n.nan
 
-    elif label == "swdw":
-        search = n.where(x<0.)
-        x[search] = n.nan
-        search = n.where(x>1400.)
-        x[search] = n.nan
+        elif label == "ts":
+            search = n.where(x<250.)
+            x[search] = n.nan
+            search = n.where(x>340.)
+            x[search] = n.nan
 
-    elif label == "lwdw":
-        search = n.where(x<0.)
-        x[search] = n.nan
-        search = n.where(x>500.)
-        x[search] = n.nan
+        elif label == "swdw":
+            search = n.where(x<0.)
+            x[search] = n.nan
+            search = n.where(x>1400.)
+            x[search] = n.nan
 
-    elif label == "RnDaily":
-        search = n.where(x<0.)
-        x[search] = n.nan
-        search = n.where(x>1400.)
-        x[search] = n.nan
+        elif label == "lwdw":
+            search = n.where(x<0.)
+            x[search] = n.nan
+            search = n.where(x>500.)
+            x[search] = n.nan
 
-    elif label == "G0_Rn":
-        search = n.where(x<0.)
-        x[search] = n.nan
-        search = n.where(x>1.)
-        x[search] = n.nan
+        elif label == "RnDaily":
+            search = n.where(x<0.)
+            x[search] = n.nan
+            search = n.where(x>1400.)
+            x[search] = n.nan
 
+        elif label == "G0_Rn":
+            search = n.where(x<0.)
+            x[search] = n.nan
+            search = n.where(x>1.)
+            x[search] = n.nan
+    except :
+        pass
+    
     else:
         pass
 

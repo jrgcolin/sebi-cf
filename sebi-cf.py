@@ -16,9 +16,9 @@ Have a look at sebi-cf.log for logs
 - bound kB outputs
 """
 __author__ = "Jerome Colin"
-__author_email__ = "first-name dot last-name @ lsiit.u-strasbg.fr"
-__date__ = "2011-01-20"
-__version__ = "0.2.1 (sneezy)"
+__author_email__ = "first-name dot last-name @ lsiit-cnrs.unistra.fr"
+__date__ = "2012-06-04"
+__version__ = "0.2.2 (sneezy)"
 
 print 'SEBI-CF ' + __version__ + "\n Use -h for help"
 import congrid
@@ -114,30 +114,30 @@ def process(fproject):
     # Dedicated logger
     process_logger = logging.getLogger("SEBI-CF.Process")
 
-    try:
+#    try:
         # Get time
-        time0 = time.time()
-        # Setting common constants
-        cd = 0.2
-        ct = 0.01
-        cp = 1005.
-        es0 = 610.7 #Pa
-        g = 9.81
-        hs = 0.009
-        k = 0.4
-        p0 = 101325.
-        pdtl = 0.71
-        gamma = 67.
-        rd = 287.04
-        rv = 461.05
-        sigma = 5.678E-8
+    time0 = time.time()
+    # Setting common constants
+    cd = 0.2
+    ct = 0.01
+    cp = 1005.
+    es0 = 610.7 #Pa
+    g = 9.81
+    hs = 0.009
+    k = 0.4
+    p0 = 101325.
+    pdtl = 0.71
+    gamma = 67.
+    rd = 287.04
+    rv = 461.05
+    sigma = 5.678E-8
+
+    # Instantiate a new project
+    myproj = Project.project(fproject)
+    process_logger.info("Instantiate a new project")
         
-        # Instantiate a new project
-        myproj = Project.project(fproject)
-        process_logger.info("Instantiate a new project")
-        
-    except Exception, err:
-        sys.stderr.write('ERROR: %s\n' % str(err))
+#    except Exception, err:
+#        sys.stderr.write('ERROR: %s\n' % str(err))
       
     #try:
     # Calculate scales
@@ -402,6 +402,7 @@ def process(fproject):
     widgets = [' Radiative budget:        ', progressBar.Percentage(), ' ', progressBar.Bar(marker='-',left='[',right=']'),
                        ' ', ' ', ' ', ' ']
     pbar = progressBar.ProgressBar(widgets=widgets, maxval=3).start()
+    process_logger.info("Launching Radiative budget")
     myproj.logs += '\n\nRadiative budget:'
 
     Rn = l.Rn(albedo,emi,lwdw,sigma,swdw,ts)
@@ -426,7 +427,7 @@ def process(fproject):
     widgets = [' Downscaling:             ', progressBar.Percentage(), ' ', progressBar.Bar(marker='-',left='[',right=']'),
                        ' ', ' ', ' ', ' ']
     pbar = progressBar.ProgressBar(widgets=widgets, maxval=12).start()
-    myproj.logs += '\n\nDownscaling:'
+    process_logger.info("Launching Downscaling")
 
     low_z0m = l.downscaling(z0m,myproj)
     l.getStats(low_z0m,'low_z0m')
@@ -483,7 +484,7 @@ def process(fproject):
                        ' ', ' ', ' ', ' ']
     pbar = progressBar.ProgressBar(widgets=widgets, maxval=myproj.gridNb[0]*myproj.gridNb[1]).start()
 
-    myproj.logs += '\n\nStability sequence'
+    process_logger.info("Launching Stability sequence")
 
     low_d0 = l.z0m2d0(low_z0m)
     l.getStats(low_d0,'low_d0')
@@ -609,6 +610,7 @@ def process(fproject):
     widgets = [' Upscaling:               ', progressBar.Percentage(), ' ', progressBar.Bar(marker='-',left='[',right=']'),
                        ' ', ' ', ' ', ' ']
     pbar = progressBar.ProgressBar(widgets=widgets, maxval=6).start()
+    process_logger.info("Launching Upscaling")
 
     # TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP TMP
     low_rho = l.nan2flt(low_rho,n.nansum(low_rho)/low_rho.size)
@@ -637,9 +639,9 @@ def process(fproject):
     # External resistances and gradients
     widgets = [' Processing SEBI:         ', progressBar.Percentage(), ' ', progressBar.Bar(marker='-',left='[',right=']'),
                        ' ', ' ', ' ', ' ']
-    pbar = progressBar.ProgressBar(widgets=widgets, maxval=4).start()
+    pbar = progressBar.ProgressBar(widgets=widgets, maxval=16).start()
 
-    myproj.logs += '\n\nExernal resistances and gradients:'
+    process_logger.info("Launching external resistances and gradients")
 
     d0 = l.z0m2d0(z0m)
     es = l.esat(es0,0.5*(ts+tr))
@@ -665,43 +667,58 @@ def process(fproject):
 
     # actual conditions
     Cw = l.Cw(hr,L,z0h,z0m)
+    pbar.update(4)
+
     re = l.re(Cw,d0,hr,k,ustar,z0h)
+    pbar.update(5)
+
     deltaa = l.tpot(cp,pg,p0,qg,rd,ts) - l.tpot(cp,pr,p0,qr,rd,tr)
+    pbar.update(6)
+
     SEBI = (deltaa/re - deltaw/rew) / (deltad/red - deltaw/rew)
+    pbar.update(7)
+
     ef = 1 - SEBI
+    pbar.update(8)
+
     search = n.where(ef > 1.)
     ef[search] = 1.
+    pbar.update(9)
+
     LE = (Rn-G0)*ef
     H = Rn - LE - G0
+    pbar.update(10)
 
     # relative evap (alternate)
     Hd = Rn - G0
     Hw = ((Rn - G0) - (rho*cp / rew) * es / gamma) / (1.0 + delta / gamma)
     Ha = rho*cp * deltaa / re
+    pbar.update(11)
 
     search = n.where(Ha>Hd)
     Ha[search] = Hd[search]
+    pbar.update(12)
 
     search = n.where(Ha<Hw)
     Ha[search] = Hw[search]
-
-
-
+    pbar.update(13)
 
     Le_re = 1. - ((Ha - Hw) / (Hd - Hw))
 
     search = n.where(Hd<=Hw)
     Le_re[search] = 1.
+    pbar.update(14)
 
     Le_fr = Le_re * (Rn - G0 - Hw) / (Rn - G0)
 
     search = n.where((Rn-G0)<=0)
     Le_fr[search] = 1.
+    pbar.update(15)
 
     if myproj.RnDaily != 'undef':
         ETdaily = Le_fr * (RnDaily * (1 - G0_Rn)) * 24*3600 / 2.45E6
 
-    pbar.update(4)
+    pbar.update(16)
     pbar.finish()
 
     widgets = [' Output statistics        ', progressBar.Percentage(), ' ', progressBar.Bar(marker='-',left='[',right=']'),
@@ -730,7 +747,13 @@ def process(fproject):
     pbar.update(10)
     l.getStats(Le_fr,'Le_fr')
     pbar.update(11)
-    l.getStats(ETdaily,'ETdaily')
+
+    # Stats for daily ET only if variable exist (may not be calculated if no daily Rn provided)
+    try:
+        l.getStats(ETdaily,'ETdaily')
+    except UnboundLocalError :
+        pass
+    
     pbar.update(12)
     pbar.finish()
 
@@ -790,13 +813,14 @@ def process(fproject):
         #process_logger.info("ERROR: process aborted")
         
     #finally:
+    print "Check sebi-cf.log for more information"
+
         # Get time and save logs
-    myproj.logs += '\n\nTotal processing time (s):' + str(time.time()-time0)
-    myproj.logs += '\n\nSnowWhite ' + __version__
-    fd=open(myproj.path + myproj.prefix + 'log.txt','w')
-    fd.write(myproj.logs)
-    fd.close()
-    print 'Log file: '+ myproj.prefix + 'log.txt'
+#    myproj.logs += '\n\nTotal processing time (s):' + str(time.time()-time0)
+#    fd=open(myproj.path + myproj.prefix + 'log.txt','w')
+#    fd.write(myproj.logs)
+#    fd.close()
+#    print 'Log file: '+ myproj.prefix + 'log.txt'
         
 if __name__ == "__main__":
     main()
